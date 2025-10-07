@@ -1,7 +1,10 @@
-import { Worker, ConnectionOptions } from "bullmq";
+import { Worker, ConnectionOptions, Job } from "bullmq";
 import IORedis from "ioredis";
 import config from "../config";
 import logger from "../utils/logger";
+import fs, { createReadStream } from "fs";
+import { JobData } from "../queues/fileProccesingQueue";
+import { parse } from "csv-parse";
 
 const redisOptions: ConnectionOptions = {
   maxRetriesPerRequest: null,
@@ -36,8 +39,25 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
   const worker = new Worker(
     `${config.queue.name}`,
-    async (job) => {
-      logger.info(`Worker ${i} - Processing job ${job.id} of type ${job.name}`);
+    async (job: Job<JobData>) => {
+      switch (true) {
+        case !!job.data.filePath:
+          const parser = createReadStream(job.data.filePath).pipe(
+            parse({
+              columns: true,
+              skip_empty_lines: true,
+            })
+          );
+
+          for await (const row of parser) {
+            logger.info(`Row fields:`, row);
+          }
+
+          break;
+        case !!job.data.S3Key:
+          logger.info(`Processing S3 file: ${job.data.S3Key}`);
+          break;
+      }
     },
     {
       connection,
@@ -48,12 +68,19 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
     }
   );
 
-  worker.on("ready", () => {
-    logger.success(`Worker ${i} is ready and listening for jobs`);
-  });
+  worker.on("ready", () => {});
 
-  worker.on("completed", async (job) => {
+  worker.on("completed", async (job: Job<JobData>) => {
     logger.success(`Worker ${i} - Job ${job.id} completed successfully`);
+    if (job.data.filePath) {
+      fs.unlink(job.data.filePath, (err) => {
+        if (err) {
+          logger.error(`Error deleting file ${job.data.filePath}:`, err);
+        } else {
+          logger.info(`Deleted processed file: ${job.data.filePath}`);
+        }
+      });
+    }
   });
 
   worker.on("failed", async (job, error) => {

@@ -2,18 +2,51 @@ import chokidar from "chokidar";
 import path from "path";
 import logger from "./utils/logger";
 import config from "./config";
-import fs from "fs";
+import fs, { createReadStream } from "fs";
+import fileProcessingQueue from "./queues/fileProccesingQueue";
+import { parse } from "csv-parse";
 
 const HOTOFOLDER_PATH = path.resolve(config.hotfolder.processPath);
 
-function creeateTestFiles(fileCount: number) {
+function createTestFiles(fileCount: number) {
+  const products = [
+    "nike shoes",
+    "adidas sneakers",
+    "puma trainers",
+    "reebok running shoes",
+    "samsung phone",
+    "iphone case",
+    "laptop bag",
+    "wireless mouse",
+    "gaming keyboard",
+    "office chair",
+  ];
+
+  const colors = ["black", "white", "blue", "red", "green", "gray", "brown"];
+  const sizes = ["38", "39", "40", "41", "42", "43", "44", "45"];
+
   for (let i = 1; i <= fileCount; i++) {
     const filePath = path.join(HOTOFOLDER_PATH, `testfile${i}.csv`);
-    fs.writeFileSync(filePath, `This is test file ${i}`);
+
+    let csvContent = "productId,productName,description\n";
+
+    for (let row = 1; row <= 100; row++) {
+      const productId = `PROD-${i}-${row.toString().padStart(3, "0")}`;
+      const product = products[Math.floor(Math.random() * products.length)];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = sizes[Math.floor(Math.random() * sizes.length)];
+      const price = (Math.random() * 100 + 20).toFixed(2);
+
+      const description = `This is ${product} they are very good quality newest model 2025 size is ${size} eu price is ${price} euros color is ${color} anyone who buys it will love it`;
+
+      csvContent += `${productId},"${product}","${description}"\n`;
+    }
+
+    fs.writeFileSync(filePath, csvContent);
   }
 }
 
-creeateTestFiles(10)
+createTestFiles(10);
 
 function enusreDirectoryExists() {
   if (!fs.existsSync(HOTOFOLDER_PATH)) {
@@ -45,4 +78,6 @@ watcher.on("add", async (filePath) => {
       }
     });
   }
+
+  await fileProcessingQueue.add(`${config.queue.name}`, { filePath });
 });

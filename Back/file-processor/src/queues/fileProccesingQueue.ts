@@ -1,7 +1,13 @@
 import { Queue } from "bullmq";
 import config from "../config";
 
-const fileProcessingQueue = new Queue(`${config.queue.name}`, {
+export type JobData = {
+  filePath?: string;
+  row?: string;
+  S3Key?: string;
+};
+
+const fileProcessingQueue = new Queue<JobData>(`${config.queue.name}`, {
   connection: {
     host: config.redis.domain,
     port: parseInt(config.redis.port),
