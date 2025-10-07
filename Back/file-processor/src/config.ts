@@ -5,6 +5,7 @@ const requiredEnvVars = {
   REDIS_PORT: process.env.REDIS_PORT,
   REDIS_HOST: process.env.REDIS_HOST,
   QUEUE_NAME: process.env.QUEUE_NAME,
+  HOTFOLDER_PATH: process.env.HOTFOLDER_PATH,
 };
 
 const missingEnvVars = Object.entries(requiredEnvVars)
@@ -28,6 +29,9 @@ const config = {
   },
   queue: {
     name: process.env.QUEUE_NAME!,
+  },
+  hotfolder: {
+    processPath: process.env.HOTFOLDER_PATH!,
   },
 } as const;
 

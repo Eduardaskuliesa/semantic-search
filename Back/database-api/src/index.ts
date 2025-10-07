@@ -11,7 +11,7 @@ server.get("/health", (req, res) => {
 });
 
 server.listen(config.server.port, () => {
-  logger.success(
+  logger.info(
     `Server is running: http://${config.server.domain}:${config.server.port}`
   );
 });
