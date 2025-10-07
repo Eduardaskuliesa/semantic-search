@@ -4,8 +4,10 @@ dotenv.config();
 const requiredEnvVars = {
   REDIS_PORT: process.env.REDIS_PORT,
   REDIS_HOST: process.env.REDIS_HOST,
-  QUEUE_NAME: process.env.QUEUE_NAME,
   HOTFOLDER_PATH: process.env.HOTFOLDER_PATH,
+  LOCAL_QUEUE_NAME: process.env.LOCAL_QUEUE_NAME,
+  S3_QUEUE_NAME: process.env.S3_QUEUE_NAME,
+  CLOUD_QUEUE_NAME: process.env.CLOUD_QUEUE_NAME,
 };
 
 const missingEnvVars = Object.entries(requiredEnvVars)
@@ -28,7 +30,9 @@ const config = {
     domain: process.env.REDIS_HOST!,
   },
   queue: {
-    name: process.env.QUEUE_NAME!,
+    localQueue: process.env.LOCAL_QUEUE_NAME!,
+    s3Queue: process.env.S3_QUEUE_NAME!,
+    cloudQueue: process.env.CLOUD_QUEUE_NAME!,
   },
   hotfolder: {
     processPath: process.env.HOTFOLDER_PATH!,

@@ -3,7 +3,7 @@ import path from "path";
 import logger from "./utils/logger";
 import config from "./config";
 import fs, { createReadStream } from "fs";
-import fileProcessingQueue from "./queues/fileProccesingQueue";
+import fileProcessingQueue from "./queues/localFileProccesingQueue";
 import { parse } from "csv-parse";
 
 const HOTOFOLDER_PATH = path.resolve(config.hotfolder.processPath);
@@ -46,7 +46,7 @@ function createTestFiles(fileCount: number) {
   }
 }
 
-createTestFiles(10);
+// createTestFiles(10);
 
 function enusreDirectoryExists() {
   if (!fs.existsSync(HOTOFOLDER_PATH)) {
@@ -79,5 +79,5 @@ watcher.on("add", async (filePath) => {
     });
   }
 
-  await fileProcessingQueue.add(`${config.queue.name}`, { filePath });
+  await fileProcessingQueue.add(`${config.queue.localQueue}`, { filePath });
 });

@@ -3,7 +3,7 @@ import IORedis from "ioredis";
 import config from "../config";
 import logger from "../utils/logger";
 import fs, { createReadStream } from "fs";
-import { JobData } from "../queues/fileProccesingQueue";
+import { JobData } from "../queues/localFileProccesingQueue";
 import { parse } from "csv-parse";
 
 const redisOptions: ConnectionOptions = {
@@ -22,23 +22,23 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   const connection = new IORedis(redisOptions);
 
   connection.on("error", (error) => {
-    logger.error(`Worker ${i} - Redis connection error:`, error);
+    logger.error(`Worker local ${i} - Redis connection error:`, error);
   });
 
   connection.on("connect", () => {
-    logger.info(`Worker ${i} connected to Redis`);
+    logger.info(`Worker local ${i} connected to Redis`);
   });
 
   connection.on("reconnecting", () => {
-    logger.info(`Worker ${i} - Reconnecting to Redis`);
+    logger.info(`Worker local ${i} - Reconnecting to Redis`);
   });
 
   connection.on("close", () => {
-    logger.warn(`Worker ${i} - Redis connection closed`);
+    logger.warn(`Worker local ${i} - Redis connection closed`);
   });
 
   const worker = new Worker(
-    `${config.queue.name}`,
+    `${config.queue.localQueue}`,
     async (job: Job<JobData>) => {
       switch (true) {
         case !!job.data.filePath:
@@ -71,7 +71,7 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   worker.on("ready", () => {});
 
   worker.on("completed", async (job: Job<JobData>) => {
-    logger.success(`Worker ${i} - Job ${job.id} completed successfully`);
+    logger.success(`Worker local ${i} - Job ${job.id} completed successfully`);
     if (job.data.filePath) {
       fs.unlink(job.data.filePath, (err) => {
         if (err) {
@@ -84,6 +84,6 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   });
 
   worker.on("failed", async (job, error) => {
-    logger.error(`Worker ${i} - Job ${job?.id} failed:`, error);
+    logger.error(`Worker local ${i} - Job ${job?.id} failed:`, error);
   });
 }
