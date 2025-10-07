@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  processor:
+    build: ./file-processor
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CHOKIDAR_USEPOLLING=true 
+    volumes:
+      - ./file-processor:/app
+      - /app/node_modules
+
+  api:
+    build: ./database-api
+    depends_on:
+      - redis
+    ports:
+      - "4040:4040"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./database-api:/app
+      - /app/node_modules
+
+volumes:
+  redis_data:

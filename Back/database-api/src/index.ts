@@ -1,5 +1,6 @@
 import express from "express";
 import config from "./config";
+import logger from "./utils/logger";
 
 const server = express();
 
@@ -10,7 +11,7 @@ server.get("/health", (req, res) => {
 });
 
 server.listen(config.server.port, () => {
-  console.log(
-    `Server is running: ${config.server.domain}:${config.server.port} `
+  logger.success(
+    `Server is running: http://${config.server.domain}:${config.server.port}`
   );
 });
