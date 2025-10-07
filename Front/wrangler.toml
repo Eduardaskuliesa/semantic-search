@@ -1,0 +1,14 @@
+name = "spring-grass-df19"
+main = ".open-next/worker.js"
+
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[observability]
+enabled = true
+
+[assets]
+binding = "ASSETS"
+directory = ".open-next/assets"
+
+upload_source_maps = true
