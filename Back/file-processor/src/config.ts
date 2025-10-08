@@ -8,6 +8,7 @@ const requiredEnvVars = {
   LOCAL_QUEUE_NAME: process.env.LOCAL_QUEUE_NAME,
   S3_QUEUE_NAME: process.env.S3_QUEUE_NAME,
   CLOUD_QUEUE_NAME: process.env.CLOUD_QUEUE_NAME,
+  GOOGLE_GEN_AI_API_KEY: process.env.GOOGLE_GEN_AI_API_KEY,
 };
 
 const missingEnvVars = Object.entries(requiredEnvVars)
@@ -37,6 +38,9 @@ const config = {
   hotfolder: {
     processPath: process.env.HOTFOLDER_PATH!,
   },
+  google: {
+    genAi: process.env.GOOGLE_GEN_AI_API_KEY!,
+  }
 } as const;
 
 export default config;

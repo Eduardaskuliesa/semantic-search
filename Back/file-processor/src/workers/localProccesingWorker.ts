@@ -6,6 +6,8 @@ import fs, { createReadStream } from "fs";
 import { JobData } from "../queues/localFileProccesingQueue";
 import { parse } from "csv-parse";
 import { prisma } from "@shared/database";
+import { googleGenAIService } from "../services/googleGenAi";
+import { randomUUID } from "crypto";
 
 const redisOptions: ConnectionOptions = {
   maxRetriesPerRequest: null,
@@ -65,8 +67,36 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
   worker.on("completed", async (job: Job<JobData>) => {
     logger.success(`Worker local ${i} - Job ${job.id} completed successfully`);
-    const totalFiles = await prisma.file.count();
-    logger.info(`Total files processed so far: ${totalFiles}`);
+
+    // const generateEmbedding = await googleGenAIService.generateEmbedding(
+    //   "This is gaming keyboard they are very good quality newest model 2025 size is 42 eu price is 103.95 euros color is blue anyone who buys it will love it"
+    // );
+
+    try {
+      const searchQuery = "keyboard for gaming";
+
+      const searchEmbedding = await googleGenAIService.generateEmbedding(
+        searchQuery
+      );
+      const searchVector = searchEmbedding[0].values;
+
+      const similarProducts = await prisma.$queryRaw`
+    SELECT 
+      id,
+      "productName",
+      description,
+      1 - (embedding <=> ${`[${searchVector.join(",")}]`}::vector) as similarity
+    FROM "Product"
+    WHERE embedding IS NOT NULL
+    ORDER BY embedding <=> ${`[${searchVector.join(",")}]`}::vector
+    LIMIT 5
+  `;
+
+      logger.info("Similar products:", similarProducts);
+    } catch (error) {
+      logger.error("Search error:", error);
+    }
+
     if (job.data.filePath) {
       fs.unlink(job.data.filePath, (err) => {
         if (err) {

@@ -13,18 +13,7 @@ datasource db {
 model Product {
   id          String   @id @default(cuid())
   productName String
-  description Unsupported("vector(1536)")
+  description String
+  embedding   Unsupported("vector")? 
   createdAt   DateTime @default(now())
-}
-
-model File {
-  id       String   @id @default(cuid())
-  fileName  String
-  createdAt DateTime @default(now())
-}
-
-model Category {
-  id       String   @id @default(cuid())
-  name     String   @unique
-  createdAt DateTime @default(now())
 }
