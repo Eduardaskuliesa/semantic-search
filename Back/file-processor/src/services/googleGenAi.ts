@@ -8,10 +8,11 @@ const ai = new GoogleGenAI({
 
 const OUTPUT_DIMENSIONALITY = 768;
 
-const systemInstruction = `Process product data in 3 steps:
+const systemInstruction = `Process product data in 4 steps:
 1. Extract price or return ""
-2. Write product description (max 20 words)
-3. Assign generic category (e.g., sneakers → shoes, laptop → electronics)`;
+2. Porductname is required,
+3. Write product description (max 20 words)
+4. Assign generic category (e.g., sneakers → shoes, laptop → electronics)`;
 
 type TaskType =
   | "RETRIEVAL_DOCUMENT"
@@ -63,7 +64,7 @@ class GoogleGenAIService {
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
+        responseMimeType: "application/json", 
         responseSchema: {
           type: Type.ARRAY,
           items: {
@@ -74,6 +75,7 @@ class GoogleGenAIService {
               },
               productName: {
                 type: Type.STRING,
+                 nullable: false
               },
               description: {
                 type: Type.STRING,
@@ -83,8 +85,10 @@ class GoogleGenAIService {
               },
               price: {
                 type: Type.NUMBER,
+               
               },
             },
+            
             propertyOrdering: [
               "productId",
               "productName",

@@ -44,7 +44,7 @@ export async function createProduct(input: CreateProductInput) {
       return { duplicate: true, existingId: duplicates[0].id };
     }
     const result = await prisma.$executeRaw`
-    INSERT INTO "Poduct" ("id", "productName", "description", "category", "price", "embedding")
+    INSERT INTO "Product" ("id", "productName", "description", "category", "price", "embedding")
     VALUES(
         ${input.productId},
         ${input.productName},

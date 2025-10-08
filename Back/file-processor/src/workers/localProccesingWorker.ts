@@ -5,9 +5,9 @@ import logger from "../utils/logger";
 import fs, { createReadStream } from "fs";
 import { JobData } from "../queues/localFileProccesingQueue";
 import { parse } from "csv-parse";
-import { prisma } from "@shared/database";
 import { googleGenAIService } from "../services/googleGenAi";
-import { randomUUID } from "crypto";
+import { createProduct } from "../queries/createProduct";
+import path from "path";
 
 const redisOptions: ConnectionOptions = {
   maxRetriesPerRequest: null,
@@ -23,51 +23,102 @@ const WORKER_COUNT = 3;
 
 for (let i = 1; i <= WORKER_COUNT; i++) {
   const connection = new IORedis(redisOptions);
+  const workerPrefix = `[Worker-${i}]`;
 
   connection.on("error", (error) => {
-    logger.error(`Worker local ${i} - Redis connection error:`, error);
+    logger.error(`${workerPrefix} Redis connection error:`, error);
   });
 
   connection.on("connect", () => {
-    logger.info(`Worker local ${i} connected to Redis`);
+    logger.info(`${workerPrefix} Connected to Redis`);
   });
 
   connection.on("reconnecting", () => {
-    logger.info(`Worker local ${i} - Reconnecting to Redis`);
+    logger.info(`${workerPrefix} Reconnecting to Redis`);
   });
 
   connection.on("close", () => {
-    logger.warn(`Worker local ${i} - Redis connection closed`);
+    logger.warn(`${workerPrefix} Redis connection closed`);
   });
 
   const worker = new Worker(
     `${config.queue.localQueue}`,
     async (job: Job<JobData>) => {
-      if (job.data.filePath) {
-        let lastRow = null;
-        let totalTokensUsed = 0;
-        const parser = createReadStream(job.data.filePath).pipe(
-          parse({
-            columns: true,
-            skip_empty_lines: true,
-          })
-        );
-        for await (const row of parser) {
-          lastRow = row;
+      const jobPrefix = `${workerPrefix}[Job-${job.id}]`;
+      if (!fs.existsSync(job.data.filePath)) {
+        logger.warn(`${jobPrefix} File not found: ${job.data.filePath}`);
+        return;
+      }
+
+      const rowCounterKey = `file:${path.basename(job.data.filePath)}:counter`;
+      const existingCounter = await connection.get(rowCounterKey);
+      const startFromRow = existingCounter ? parseInt(existingCounter, 10) : 0;
+
+      logger.info(`${jobPrefix} Starting from row ${startFromRow}`);
+
+      let totalTokensUsed = 0;
+      let currentRow = 0;
+
+      const parser = createReadStream(job.data.filePath).pipe(
+        parse({ columns: true, skip_empty_lines: true })
+      );
+
+      for await (const row of parser) {
+        if (currentRow < startFromRow) {
+          currentRow++;
+          continue;
         }
-        if (lastRow) {
-          // const parse = JSON.stringify(lastRow, null, 2);
-          // const response = await googleGenAIService.createStructuredData(parse);
-          // if (response.data && response.data.length > 0) {
-         
 
-          // }
+        const rowData = JSON.stringify(row, null, 2);
+        let retryCount = 0;
+        const maxRetries = 3;
 
-          // logger.info("Google Gen AI Response:", response.data);
-          // logger.info("Google Gen AI Tokens used:", response.tokenCount);
-          // totalTokensUsed += response.tokenCount;
+        while (retryCount < maxRetries) {
+          try {
+            const response = await googleGenAIService.createStructuredData(
+              rowData
+            );
+
+            if (response?.data?.[0]) {
+              await createProduct(response.data[0]);
+            }
+
+            totalTokensUsed += response?.tokenCount || 0;
+            currentRow++;
+            await connection.set(rowCounterKey, currentRow);
+
+            logger.info(`${jobPrefix} Row ${currentRow} processed`);
+            break;
+          } catch (error: any) {
+            if (error.status === 429) {
+              retryCount++;
+
+              if (retryCount < maxRetries) {
+                logger.warn(
+                  `${jobPrefix} Rate limit hit. Retry ${retryCount}/${maxRetries} - waiting 30s`
+                );
+                await new Promise((resolve) => setTimeout(resolve, 30000));
+              } else {
+                logger.error(
+                  `${jobPrefix} Rate limit exhausted at row ${currentRow}`
+                );
+                return;
+              }
+            } else {
+              logger.error(
+                `${jobPrefix} Error at row ${currentRow}:`,
+                error.message
+              );
+              break;
+            }
+          }
         }
       }
+
+      await connection.del(rowCounterKey);
+      logger.success(
+        `${jobPrefix} Completed. Total tokens: ${totalTokensUsed}`
+      );
     },
     {
       connection,
@@ -75,55 +126,31 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
       removeOnComplete: {
         age: 0,
       },
+      stalledInterval: 30000,
+      maxStalledCount: 1,
     }
   );
 
-  worker.on("ready", () => {});
-
   worker.on("completed", async (job: Job<JobData>) => {
-    logger.success(`Worker local ${i} - Job ${job.id} completed successfully`);
-
-    // const generateEmbedding = await googleGenAIService.generateEmbedding({
-    //   text: "This is gaming keyboard...",
-    //   taskType: "RETRIEVAL_DOCUMENT",
-    // });
-
-    // try {
-    //   if (generateEmbedding) {
-    //     const embeddingArray = generateEmbedding[0].values;
-    //     logger.info("Generated Embedding:", embeddingArray);
-
-    //     const createProduct = await prisma.$executeRaw`
-    //   INSERT INTO "Product" ("id", "productName", "description", "embedding")
-    //   VALUES (
-    //     ${randomUUID()},
-    //     ${"Gaming Keyboard"},
-    //     ${"This is gaming keyboard..."},
-    //     ${`[${embeddingArray?.join(",")}]`}::vector
-    //   )
-    // `;
-
-    //     if (createProduct > 0) {
-    //       logger.success(`Inserted ${createProduct} product(s)`);
-    //     }
-    //   }
-    // } catch (error) {
-    //   logger.error("Database error:", error);
-    //   // App continues running instead of crashing
-    // }
+    logger.success(`${workerPrefix}[Job-${job.id}] Completed successfully`);
 
     if (job.data.filePath) {
       fs.unlink(job.data.filePath, (err) => {
         if (err) {
-          logger.error(`Error deleting file ${job.data.filePath}:`, err);
+          logger.error(
+            `${workerPrefix}[Job-${job.id}] Failed to delete file:`,
+            err
+          );
         } else {
-          logger.info(`Deleted processed file: ${job.data.filePath}`);
+          logger.info(
+            `${workerPrefix}[Job-${job.id}] File deleted: ${job.data.filePath}`
+          );
         }
       });
     }
   });
 
   worker.on("failed", async (job, error) => {
-    logger.error(`Worker local ${i} - Job ${job?.id} failed:`, error);
+    logger.error(`${workerPrefix}[Job-${job?.id}] Failed:`, error.message);
   });
 }
