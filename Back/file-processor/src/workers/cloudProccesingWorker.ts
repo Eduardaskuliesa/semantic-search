@@ -37,7 +37,7 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
   const worker = new Worker(`${config.queue.cloudQueue}`, async (job) => {}, {
     connection,
-    concurrency: 5,
+    concurrency: 3,
     removeOnComplete: {
       age: 0,
     },

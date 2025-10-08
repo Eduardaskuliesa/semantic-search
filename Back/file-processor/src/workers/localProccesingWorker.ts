@@ -5,6 +5,7 @@ import logger from "../utils/logger";
 import fs, { createReadStream } from "fs";
 import { JobData } from "../queues/localFileProccesingQueue";
 import { parse } from "csv-parse";
+import { prisma } from "@shared/database";
 
 const redisOptions: ConnectionOptions = {
   maxRetriesPerRequest: null,
@@ -40,28 +41,20 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   const worker = new Worker(
     `${config.queue.localQueue}`,
     async (job: Job<JobData>) => {
-      switch (true) {
-        case !!job.data.filePath:
-          const parser = createReadStream(job.data.filePath).pipe(
-            parse({
-              columns: true,
-              skip_empty_lines: true,
-            })
-          );
-
-          for await (const row of parser) {
-            logger.info(`Row fields:`, row);
-          }
-
-          break;
-        case !!job.data.S3Key:
-          logger.info(`Processing S3 file: ${job.data.S3Key}`);
-          break;
+      if (job.data.filePath) {
+        const parser = createReadStream(job.data.filePath).pipe(
+          parse({
+            columns: true,
+            skip_empty_lines: true,
+          })
+        );
+        for await (const row of parser) {
+        }
       }
     },
     {
       connection,
-      concurrency: 5,
+      concurrency: 3,
       removeOnComplete: {
         age: 0,
       },
@@ -72,6 +65,8 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
   worker.on("completed", async (job: Job<JobData>) => {
     logger.success(`Worker local ${i} - Job ${job.id} completed successfully`);
+    const totalFiles = await prisma.file.count();
+    logger.info(`Total files processed so far: ${totalFiles}`);
     if (job.data.filePath) {
       fs.unlink(job.data.filePath, (err) => {
         if (err) {

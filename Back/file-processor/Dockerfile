@@ -1,13 +1,19 @@
-FROM node:alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY shared/database ../shared/database
+
+COPY shared/database/prisma ./prisma
+
+COPY file-processor/package*.json ./
+COPY file-processor/nodemon.json ./
 
 RUN npm ci && \
-    npm install -g typescript ts-node nodemon
+    npm install -g typescript ts-node nodemon prisma
 
-COPY nodemon.json ./
-COPY . .
+RUN npx prisma generate
+
+COPY file-processor/src ./src
 
 CMD ["npm", "run", "dev"]

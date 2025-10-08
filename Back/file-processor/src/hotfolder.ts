@@ -46,8 +46,6 @@ function createTestFiles(fileCount: number) {
   }
 }
 
-// createTestFiles(10);
-
 function enusreDirectoryExists() {
   if (!fs.existsSync(HOTOFOLDER_PATH)) {
     fs.mkdirSync(HOTOFOLDER_PATH, { recursive: true });

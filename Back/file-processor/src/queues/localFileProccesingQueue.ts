@@ -2,9 +2,7 @@ import { Queue } from "bullmq";
 import config from "../config";
 
 export type JobData = {
-  filePath?: string;
-  row?: string;
-  S3Key?: string;
+  filePath: string;
 };
 
 const localFileProcessingQueue = new Queue<JobData>(

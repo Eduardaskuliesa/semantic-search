@@ -1,0 +1,10 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY ./shared/database/package*.json ./
+COPY ./shared/database/prisma ./prisma
+
+RUN npm ci
+
+CMD ["npx", "prisma", "migrate", "deploy"]
