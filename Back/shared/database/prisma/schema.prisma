@@ -11,9 +11,11 @@ datasource db {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String   @id 
   productName String
   description String
+  price       String
+  category    String
   embedding   Unsupported("vector")? 
   createdAt   DateTime @default(now())
 }

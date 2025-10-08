@@ -44,6 +44,8 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
     `${config.queue.localQueue}`,
     async (job: Job<JobData>) => {
       if (job.data.filePath) {
+        let lastRow = null;
+        let totalTokensUsed = 0;
         const parser = createReadStream(job.data.filePath).pipe(
           parse({
             columns: true,
@@ -51,6 +53,19 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
           })
         );
         for await (const row of parser) {
+          lastRow = row;
+        }
+        if (lastRow) {
+          // const parse = JSON.stringify(lastRow, null, 2);
+          // const response = await googleGenAIService.createStructuredData(parse);
+          // if (response.data && response.data.length > 0) {
+         
+
+          // }
+
+          // logger.info("Google Gen AI Response:", response.data);
+          // logger.info("Google Gen AI Tokens used:", response.tokenCount);
+          // totalTokensUsed += response.tokenCount;
         }
       }
     },
@@ -68,34 +83,34 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   worker.on("completed", async (job: Job<JobData>) => {
     logger.success(`Worker local ${i} - Job ${job.id} completed successfully`);
 
-    // const generateEmbedding = await googleGenAIService.generateEmbedding(
-    //   "This is gaming keyboard they are very good quality newest model 2025 size is 42 eu price is 103.95 euros color is blue anyone who buys it will love it"
-    // );
+    // const generateEmbedding = await googleGenAIService.generateEmbedding({
+    //   text: "This is gaming keyboard...",
+    //   taskType: "RETRIEVAL_DOCUMENT",
+    // });
 
-    try {
-      const searchQuery = "keyboard for gaming";
+    // try {
+    //   if (generateEmbedding) {
+    //     const embeddingArray = generateEmbedding[0].values;
+    //     logger.info("Generated Embedding:", embeddingArray);
 
-      const searchEmbedding = await googleGenAIService.generateEmbedding(
-        searchQuery
-      );
-      const searchVector = searchEmbedding[0].values;
+    //     const createProduct = await prisma.$executeRaw`
+    //   INSERT INTO "Product" ("id", "productName", "description", "embedding")
+    //   VALUES (
+    //     ${randomUUID()},
+    //     ${"Gaming Keyboard"},
+    //     ${"This is gaming keyboard..."},
+    //     ${`[${embeddingArray?.join(",")}]`}::vector
+    //   )
+    // `;
 
-      const similarProducts = await prisma.$queryRaw`
-    SELECT 
-      id,
-      "productName",
-      description,
-      1 - (embedding <=> ${`[${searchVector.join(",")}]`}::vector) as similarity
-    FROM "Product"
-    WHERE embedding IS NOT NULL
-    ORDER BY embedding <=> ${`[${searchVector.join(",")}]`}::vector
-    LIMIT 5
-  `;
-
-      logger.info("Similar products:", similarProducts);
-    } catch (error) {
-      logger.error("Search error:", error);
-    }
+    //     if (createProduct > 0) {
+    //       logger.success(`Inserted ${createProduct} product(s)`);
+    //     }
+    //   }
+    // } catch (error) {
+    //   logger.error("Database error:", error);
+    //   // App continues running instead of crashing
+    // }
 
     if (job.data.filePath) {
       fs.unlink(job.data.filePath, (err) => {
