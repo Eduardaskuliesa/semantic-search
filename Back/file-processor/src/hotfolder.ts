@@ -117,7 +117,7 @@ function createTestFiles(fileCount: number) {
     );
     let csvContent = "productId,productName,description\n";
 
-    for (let row = 1; row <= 10; row++) {
+    for (let row = 1; row <= 1; row++) {
       const productId = randomUUID();
       const product = products[Math.floor(Math.random() * products.length)];
       const desc =
@@ -139,7 +139,7 @@ function createTestFiles(fileCount: number) {
   }
 }
 
-// createTestFiles(10);
+createTestFiles(1);
 
 function enusreDirectoryExists() {
   if (!fs.existsSync(HOTOFOLDER_PATH)) {
@@ -175,15 +175,27 @@ watcher.on("add", async (filePath) => {
   }
 
   try {
+    const fileName = path.basename(filePath);
+    const jobs = await fileProcessingQueue.getJobs([
+      "active",
+      "waiting",
+      "delayed",
+    ]);
+    const duplicateJob = jobs.find((job) => job.data.filePath === filePath);
+    if (duplicateJob) {
+      logger.warn(
+        `Job for file ${fileName} is already in the queue. Skipping duplicate.`
+      );
+      return;
+    }
     await fileProcessingQueue.add(
       `${config.queue.localQueue}`,
       { filePath },
       {
-        jobId: path.basename(filePath),
         removeOnComplete: true,
       }
     );
-    logger.info(`Queued: ${path.basename(filePath)}`);
+    logger.info(`Queued: ${fileName}`);
   } catch (error) {
     logger.error(`Failed to queue ${filePath}:`, error);
   }

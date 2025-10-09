@@ -20,7 +20,7 @@ const redisOptions: ConnectionOptions = {
 };
 
 const WORKER_COUNT = parseInt(process.env.WORKER_COUNT || "3");
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 10;
 
 const workers: Worker[] = [];
 const connections: IORedis[] = [];
@@ -159,7 +159,7 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
         age: 0,
       },
       stalledInterval: 30000,
-      maxStalledCount: 1,
+      maxStalledCount: 3,
     }
   );
   workers.push(worker);

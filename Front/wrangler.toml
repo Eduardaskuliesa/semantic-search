@@ -1,4 +1,4 @@
-name = "spring-grass-df19"
+name = "semantic-search"
 main = ".open-next/worker.js"
 
 compatibility_date = "2025-04-01"
@@ -7,6 +7,22 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 [observability]
 enabled = true
 
+[[d1_databases]]
+binding = "DB"
+database_name = "semantic-search-db"
+database_id = "22513f0d-2683-4598-bd81-41bfa10a33c7"
+migrations_dir = "db/migrations"
+
+[vars]
+BETTER_AUTH_URL = "http://localhost:3000"
+NEXT_PUBLIC_APP_URL = "http://localhost:3000"
+
 [assets]
 binding = "ASSETS"
 directory = ".open-next/assets"
+
+
+
+
+
+
