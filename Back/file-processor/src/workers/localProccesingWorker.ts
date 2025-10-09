@@ -6,8 +6,8 @@ import fs, { createReadStream } from "fs";
 import { JobData } from "../queues/localFileProccesingQueue";
 import { parse } from "csv-parse";
 import { googleGenAIService } from "../services/googleGenAi";
-import { createProduct } from "../queries/createProduct";
 import path from "path";
+import { createManyProducts } from "../queries/createManyProducts";
 
 const redisOptions: ConnectionOptions = {
   maxRetriesPerRequest: null,
@@ -19,10 +19,15 @@ const redisOptions: ConnectionOptions = {
   keepAlive: 100000,
 };
 
-const WORKER_COUNT = 3;
+const WORKER_COUNT = parseInt(process.env.WORKER_COUNT || "3");
+const BATCH_SIZE = 20;
+
+const workers: Worker[] = [];
+const connections: IORedis[] = [];
 
 for (let i = 1; i <= WORKER_COUNT; i++) {
   const connection = new IORedis(redisOptions);
+  connections.push(connection);
   const workerPrefix = `[Worker-${i}]`;
 
   connection.on("error", (error) => {
@@ -44,7 +49,9 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   const worker = new Worker(
     `${config.queue.localQueue}`,
     async (job: Job<JobData>) => {
-      const jobPrefix = `${workerPrefix}[Job-${job.id}]`;
+      const jobPrefix = `${workerPrefix}[Job-${job.id}][${path.basename(
+        job.data.filePath
+      )}]`;
       if (!fs.existsSync(job.data.filePath)) {
         logger.warn(`${jobPrefix} File not found: ${job.data.filePath}`);
         return;
@@ -58,10 +65,26 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
       let totalTokensUsed = 0;
       let currentRow = 0;
+      let batch: any[] = [];
 
       const parser = createReadStream(job.data.filePath).pipe(
         parse({ columns: true, skip_empty_lines: true })
       );
+
+      const processBatch = async () => {
+        if (batch.length === 0) return;
+
+        try {
+          const results = await createManyProducts(batch, jobPrefix);
+          logger.info(
+            `${jobPrefix} Batch: ${results.created} created, ${results.duplicates} duplicates, ${results.failed} failed`
+          );
+          batch = [];
+        } catch (error: any) {
+          logger.error(`${jobPrefix} Batch processing failed:`, error.message);
+          throw error;
+        }
+      };
 
       for await (const row of parser) {
         if (currentRow < startFromRow) {
@@ -79,13 +102,17 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
               rowData
             );
 
-            if (response?.data?.[0]) {
-              await createProduct(response.data[0]);
+            if (response?.data && response.data.length > 0) {
+              batch.push(...response.data);
             }
 
             totalTokensUsed += response?.tokenCount || 0;
             currentRow++;
-            await connection.set(rowCounterKey, currentRow);
+
+            if (batch.length >= BATCH_SIZE) {
+              await processBatch();
+              await connection.set(rowCounterKey, currentRow);
+            }
 
             logger.info(`${jobPrefix} Row ${currentRow} processed`);
             break;
@@ -102,6 +129,9 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
                 logger.error(
                   `${jobPrefix} Rate limit exhausted at row ${currentRow}`
                 );
+
+                await processBatch();
+                await connection.set(rowCounterKey, currentRow);
                 return;
               }
             } else {
@@ -115,7 +145,9 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
         }
       }
 
+      await processBatch();
       await connection.del(rowCounterKey);
+
       logger.success(
         `${jobPrefix} Completed. Total tokens: ${totalTokensUsed}`
       );
@@ -130,11 +162,12 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
       maxStalledCount: 1,
     }
   );
+  workers.push(worker);
 
   worker.on("completed", async (job: Job<JobData>) => {
     logger.success(`${workerPrefix}[Job-${job.id}] Completed successfully`);
 
-    if (job.data.filePath) {
+    if (job.data.filePath && fs.existsSync(job.data.filePath)) {
       fs.unlink(job.data.filePath, (err) => {
         if (err) {
           logger.error(
@@ -147,6 +180,10 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
           );
         }
       });
+    } else if (job.data.filePath) {
+      logger.info(
+        `${workerPrefix}[Job-${job.id}] File already deleted: ${job.data.filePath}`
+      );
     }
   });
 
@@ -154,3 +191,24 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
     logger.error(`${workerPrefix}[Job-${job?.id}] Failed:`, error.message);
   });
 }
+
+process.on("SIGTERM", async () => {
+  for (const worker of workers) {
+    await worker.close();
+  }
+  for (const conn of connections) {
+    await conn.quit();
+  }
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  logger.info("Shutting down workers...");
+  for (const worker of workers) {
+    await worker.close();
+  }
+  for (const connection of connections) {
+    await connection.quit();
+  }
+  process.exit(0);
+});

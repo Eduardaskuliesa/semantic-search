@@ -38,11 +38,58 @@ type StructuredDataResponse = {
   tokenCount: number;
 };
 
+const USE_MOCK = true;
+
 class GoogleGenAIService {
+  private generateMockEmbedding(): ContentEmbedding {
+    return {
+      values: Array.from(
+        { length: OUTPUT_DIMENSIONALITY },
+        () => Math.random() * 2 - 1
+      ),
+    };
+  }
+
+  private generateMockStructuredData(contents: string): StructuredDataResponse {
+    let parsedData: any = {};
+    try {
+      parsedData = JSON.parse(contents);
+    } catch {
+      parsedData = { productId: "mock-" + Date.now() };
+    }
+
+    const mockCategories = [
+      "electronics",
+      "clothing",
+      "home",
+      "sports",
+      "books",
+    ];
+    const mockData: StructuredData = {
+      productId: parsedData.productId || `mock-${Date.now()}`,
+      productName: parsedData.productName || "Mock Product",
+      description: "Mock product description for testing",
+      category:
+        mockCategories[Math.floor(Math.random() * mockCategories.length)],
+      price: Math.floor(Math.random() * 1000) + 10,
+    };
+
+    return {
+      data: [mockData],
+      tokenCount: Math.floor(Math.random() * 100) + 50,
+    };
+  }
+
   async generateEmbedding({
     text,
     taskType,
   }: GenerateEmbeddingParams): Promise<ContentEmbedding[]> {
+    if (USE_MOCK) {
+      logger.info("[MOCK] Generating mock embedding");
+      await new Promise((resolve) => setTimeout(resolve, 100)); 
+      return [this.generateMockEmbedding()];
+    }
+
     const response = await ai.models.embedContent({
       model: "gemini-embedding-001",
       contents: text,
@@ -56,15 +103,22 @@ class GoogleGenAIService {
     }
     return response.embeddings || [];
   }
+
   async createStructuredData(
     contents: string
   ): Promise<StructuredDataResponse> {
+    if (USE_MOCK) {
+      logger.info("[MOCK] Generating mock structured data");
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return this.generateMockStructuredData(contents);
+    }
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-lite",
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
-        responseMimeType: "application/json", 
+        responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
           items: {
@@ -75,7 +129,7 @@ class GoogleGenAIService {
               },
               productName: {
                 type: Type.STRING,
-                 nullable: false
+                nullable: false,
               },
               description: {
                 type: Type.STRING,
@@ -85,10 +139,8 @@ class GoogleGenAIService {
               },
               price: {
                 type: Type.NUMBER,
-               
               },
             },
-            
             propertyOrdering: [
               "productId",
               "productName",

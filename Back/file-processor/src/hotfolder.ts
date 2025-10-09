@@ -5,7 +5,7 @@ import config from "./config";
 import fs from "fs";
 import { randomUUID } from "crypto";
 import fileProcessingQueue from "./queues/localFileProccesingQueue";
-
+import { log } from "console";
 
 const HOTOFOLDER_PATH = path.resolve(config.hotfolder.processPath);
 
@@ -111,10 +111,13 @@ function createTestFiles(fileCount: number) {
   ];
 
   for (let i = 1; i <= fileCount; i++) {
-    const filePath = path.join(HOTOFOLDER_PATH, `testfile${i}.csv`);
+    const filePath = path.join(
+      HOTOFOLDER_PATH,
+      `testfile${i}-${randomUUID()}.csv`
+    );
     let csvContent = "productId,productName,description\n";
 
-    for (let row = 1; row <= 1; row++) {
+    for (let row = 1; row <= 10; row++) {
       const productId = randomUUID();
       const product = products[Math.floor(Math.random() * products.length)];
       const desc =
@@ -124,7 +127,7 @@ function createTestFiles(fileCount: number) {
         conditions[Math.floor(Math.random() * conditions.length)];
       const feature = features[Math.floor(Math.random() * features.length)];
       const price = (Math.random() * 500 + 50).toFixed(2);
-      const year = 2023 + Math.floor(Math.random() * 3); // 2023-2025
+      const year = 2023 + Math.floor(Math.random() * 3);
 
       const description = `${desc}. ${product} in ${color}, ${condition}, ${year} model. Price: €${price}, ${feature}. Excellent choice for anyone looking for quality and reliability.`;
 
@@ -136,7 +139,7 @@ function createTestFiles(fileCount: number) {
   }
 }
 
-createTestFiles(10);
+// createTestFiles(10);
 
 function enusreDirectoryExists() {
   if (!fs.existsSync(HOTOFOLDER_PATH)) {
@@ -151,6 +154,7 @@ enusreDirectoryExists();
 const watcher = chokidar.watch(HOTOFOLDER_PATH, {
   persistent: true,
   depth: 0,
+  ignoreInitial: false,
   awaitWriteFinish: {
     stabilityThreshold: 2000,
     pollInterval: 100,
@@ -167,7 +171,20 @@ watcher.on("add", async (filePath) => {
         logger.info(`Deleted non-csv file: ${filePath}`);
       }
     });
+    return;
   }
 
-  await fileProcessingQueue.add(`${config.queue.localQueue}`, { filePath });
+  try {
+    await fileProcessingQueue.add(
+      `${config.queue.localQueue}`,
+      { filePath },
+      {
+        jobId: path.basename(filePath),
+        removeOnComplete: true,
+      }
+    );
+    logger.info(`Queued: ${path.basename(filePath)}`);
+  } catch (error) {
+    logger.error(`Failed to queue ${filePath}:`, error);
+  }
 });

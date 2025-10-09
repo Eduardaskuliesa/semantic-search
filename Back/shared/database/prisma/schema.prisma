@@ -16,6 +16,6 @@ model Product {
   description String
   price       String
   category    String
-  embedding   Unsupported("vector")? 
+  embedding   Unsupported("vector(768)")?
   createdAt   DateTime @default(now())
 }
