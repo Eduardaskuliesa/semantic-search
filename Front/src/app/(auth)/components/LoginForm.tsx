@@ -31,7 +31,7 @@ const LoginForm = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const { data: authData, error } = await authClient.signIn.email({
+      const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
       });
@@ -44,8 +44,6 @@ const LoginForm = () => {
         toast.error("Invalid credentials");
         return;
       }
-
-      console.log("Login response:", { authData, error });
 
       toast.success("Welcome back!");
     } catch {

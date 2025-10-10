@@ -49,6 +49,7 @@ const RegisterForm = () => {
           type: "manual",
           message: error.message || "Registration failed",
         });
+        console.log("Registration error:", error);
         toast.error("Registration failed");
         return;
       }
@@ -58,7 +59,8 @@ const RegisterForm = () => {
       });
 
       reset();
-    } catch {
+    } catch (error){
+      console.log("Registration error:", error);
       toast.error("Internal server error. Please try again later.");
     }
   };
