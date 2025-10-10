@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FaGithub } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
-// import authClient from "@/lib/auth-client";
+import authClient from "@/lib/auth-client";
 
 const SocialLogin = () => {
   const handleGoogleLogin = async () => {
@@ -15,6 +15,7 @@ const SocialLogin = () => {
 
   const handleGithubLogin = async () => {
     toast.info("Social login is not implemented yet.");
+    await authClient.signOut();
     // await authClient.signIn.social({
     //   provider: "github",
     // });

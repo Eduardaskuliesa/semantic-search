@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "semantic-search" generated at 2025-10-10T00:38:57.909Z.

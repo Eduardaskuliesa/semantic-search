@@ -34,6 +34,7 @@ const LoginForm = () => {
       const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
+        callbackURL: "/dashboard",
       });
 
       if (error?.code === "INVALID_EMAIL_OR_PASSWORD") {

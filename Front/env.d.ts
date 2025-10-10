@@ -10,6 +10,7 @@ interface CloudflareEnv extends Cloudflare.Env {
     DB: D1Database;
     BETTER_AUTH_SECRET: string;
     BETTER_AUTH_URL: string;
+    NEXT_PUBLIC_APP_URL: string
 }
 
 // Begin runtime types
