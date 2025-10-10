@@ -4,6 +4,8 @@ dotenv.config();
 const requiredEnvVars = {
   SERVER_PORT: process.env.SERVER_PORT,
   SERVER_DOMAIN: process.env.SERVER_DOMAIN,
+  SEMANTIC_SEARCH_API_KEY: process.env.SEMANTIC_SEARCH_API_KEY,
+  NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
 };
 
 const missingEnvVars = Object.entries(requiredEnvVars)
@@ -25,6 +27,10 @@ const config = {
     port: process.env.SERVER_PORT!,
     domain: process.env.SERVER_DOMAIN!,
   },
+  frontEnd: {
+    url: process.env.NEXT_PUBLIC_URL!,
+    apiKey: process.env.SEMANTIC_SEARCH_API_KEY!,
+  }
 } as const;
 
 export default config;

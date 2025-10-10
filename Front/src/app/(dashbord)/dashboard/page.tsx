@@ -1,7 +1,9 @@
+import { getDummyUserAction } from "@/actions/test";
 import { initAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import React from "react";
+import DashboardClientPage from "./DashboardClientPage";
 
 const page = async () => {
   const auth = await initAuth();
@@ -11,7 +13,11 @@ const page = async () => {
   if (!session) {
     redirect("/login");
   }
-  return <div>page</div>;
+  await getDummyUserAction(session.user.id);
+
+  return (
+    <DashboardClientPage token={session.session.token}></DashboardClientPage>
+  );
 };
 
 export default page;

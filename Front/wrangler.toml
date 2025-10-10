@@ -13,6 +13,14 @@ database_name = "semantic-search-db"
 database_id = "22513f0d-2683-4598-bd81-41bfa10a33c7"
 migrations_dir = "db/migrations"
 
+[[r2_buckets]]
+binding = "NEXT_INC_CACHE_R2_BUCKET"
+bucket_name = "semantic-search-cache"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "semantic-search"
+
 [vars]
 BETTER_AUTH_URL = "http://localhost:3000"
 NEXT_PUBLIC_APP_URL = "http://localhost:3000"

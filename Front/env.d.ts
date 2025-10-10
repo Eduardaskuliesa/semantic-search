@@ -11,6 +11,7 @@ interface CloudflareEnv extends Cloudflare.Env {
     BETTER_AUTH_SECRET: string;
     BETTER_AUTH_URL: string;
     NEXT_PUBLIC_APP_URL: string
+    SEMANTIC_SEARCH_API_KEY: string
 }
 
 // Begin runtime types
