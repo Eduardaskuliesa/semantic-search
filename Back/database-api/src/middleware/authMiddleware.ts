@@ -15,8 +15,6 @@ export const validateSession = async (
 
   const sessionToken = req.headers["better-auth-session-token"];
 
-  console.log("Session Token:", sessionToken);
-
   if (!sessionToken) {
     return res.status(401).json({ error: "Unauthorized" });
   }

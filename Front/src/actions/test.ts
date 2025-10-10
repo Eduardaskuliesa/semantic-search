@@ -14,7 +14,7 @@ async function fetchDummyData(userId: string) {
 
 const getCachedUserData = unstable_cache(
   async (userId: string) => {
-    console.error("🔴 Cache MISS");
+    console.log("🔴 Cache MISS");
     return await fetchDummyData(userId);
   },
   ["user-data"],

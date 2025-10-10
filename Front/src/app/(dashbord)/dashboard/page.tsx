@@ -1,22 +1,14 @@
 import { getDummyUserAction } from "@/actions/test";
-import { initAuth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import React from "react";
 import DashboardClientPage from "./DashboardClientPage";
+import { validateSession } from "@/helpers/validateSession";
 
 const page = async () => {
-  const auth = await initAuth();
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
-    redirect("/login");
-  }
+  const session = await validateSession()
   await getDummyUserAction(session.user.id);
 
   return (
-    <DashboardClientPage token={session.session.token}></DashboardClientPage>
+    <DashboardClientPage></DashboardClientPage>
   );
 };
 
