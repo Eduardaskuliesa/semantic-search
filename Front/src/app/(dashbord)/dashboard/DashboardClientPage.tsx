@@ -7,9 +7,17 @@ import { SwipeableTabContent } from "./components/SwipeableTabContent";
 import { generateUploadUrl } from "@/actions/generateUploadUrl";
 import { toast } from "sonner";
 
+type FileStatus = {
+  status: "pending" | "uploading" | "processing" | "completed" | "error";
+  progress: number;
+  error?: string;
+};
+
 const DashboardClientPage = () => {
   const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [fileStatuses, setFileStatuses] = useState<Map<string, FileStatus>>(
+    new Map()
+  );
   const tabs = ["upload", "jobs"];
   const {
     activeTab,
@@ -20,29 +28,50 @@ const DashboardClientPage = () => {
     variants,
   } = useSwipeableTabs(tabs);
 
+  const updateFileStatus = (fileName: string, status: Partial<FileStatus>) => {
+    setFileStatuses((prev) => {
+      const newMap = new Map(prev);
+      const current = newMap.get(fileName) || {
+        status: "pending",
+        progress: 0,
+      };
+      newMap.set(fileName, { ...current, ...status });
+      return newMap;
+    });
+  };
+
   const handleUpload = async () => {
-    setUploading(true);
     try {
       for (const file of files) {
+        const status = fileStatuses.get(file.name);
+        if (status?.status === "completed") continue;
+
+        updateFileStatus(file.name, { status: "uploading", progress: 0 });
+
         const result = await generateUploadUrl(file.name);
+        const { uploadUrl } = result;
 
-        const { uploadUrl, key } = result;
-
-        await fetch(uploadUrl, {
+        const uploadResponse = await fetch(uploadUrl, {
           method: "PUT",
           body: file,
         });
 
-        console.log("Uploaded:", key);
+        if (!uploadResponse.ok) {
+          throw new Error("Upload failed");
+        }
+
+        updateFileStatus(file.name, { status: "processing", progress: 50 });
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        updateFileStatus(file.name, { status: "completed", progress: 100 });
       }
-      setUploading(false);
+
       toast.success("All files uploaded successfully");
     } catch (error) {
-      setUploading(false);
       console.error("Upload failed:", error);
+      toast.error("Upload failed");
     }
   };
-
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 max-h-[90vh] md:mt-14">
       <Tabs
@@ -68,9 +97,9 @@ const DashboardClientPage = () => {
                 return (
                   <FileUploader
                     files={files}
+                    fileStatuses={fileStatuses}
                     onFilesChange={setFiles}
                     onUpload={handleUpload}
-                    uploading={uploading}
                   />
                 );
               case "jobs":
