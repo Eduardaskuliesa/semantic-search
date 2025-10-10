@@ -1,17 +1,23 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import React, { useRef } from "react";
-import { X, Upload, FileText } from "lucide-react";
+import { X, Upload, FileText, Loader } from "lucide-react";
 import { MotionButton } from "@/components/ui/motion-button";
 import { toast } from "sonner";
 
 interface FileUploaderProps {
   files: File[];
+  uploading: boolean;
   onFilesChange: (files: File[]) => void;
   onUpload: () => void;
 }
 
-export const FileUploader = ({ files, onFilesChange, onUpload }: FileUploaderProps) => {
+export const FileUploader = ({
+  files,
+  onFilesChange,
+  onUpload,
+  uploading,
+}: FileUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -23,8 +29,8 @@ export const FileUploader = ({ files, onFilesChange, onUpload }: FileUploaderPro
         toast.info("Only CSV files are accepted");
       }
 
-      if (csvFiles.length > 0) {
-        onFilesChange([...files, ...csvFiles]);
+      if (fileArray.length > 0) {
+        onFilesChange([...files, ...fileArray]);
       }
     }
   };
@@ -92,12 +98,22 @@ export const FileUploader = ({ files, onFilesChange, onUpload }: FileUploaderPro
       {files.length > 0 && (
         <div className="p-4 mb-4">
           <MotionButton
+            disabled={uploading}
             whileTap={{ scale: 0.98, translateY: 2 }}
             onClick={onUpload}
             className="w-full transition-none"
           >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload {files.length} file{files.length > 1 ? "s" : ""}
+            {uploading ? (
+              <>
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload {files.length} file{files.length > 1 ? "s" : ""}
+              </>
+            )}
           </MotionButton>
         </div>
       )}

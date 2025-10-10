@@ -9,7 +9,7 @@ export default async function DashboardLayout({
 }>) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
-  console.log("Sidebar default open:", defaultOpen);
+
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />

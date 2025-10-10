@@ -12,6 +12,10 @@ interface CloudflareEnv extends Cloudflare.Env {
   BETTER_AUTH_URL: string;
   NEXT_PUBLIC_APP_URL: string;
   SEMANTIC_SEARCH_API_KEY: string;
+  FILES_BUCKET: R2Bucket;
+  ACCOUNT_ID: string;
+  R2_ACCESS_KEY_ID: string;
+  R2_SECRET_ACCESS_KEY: string;
 }
 
 // Begin runtime types
