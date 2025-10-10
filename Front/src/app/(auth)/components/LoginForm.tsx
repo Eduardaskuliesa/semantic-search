@@ -47,9 +47,7 @@ const LoginForm = () => {
 
       console.log("Login response:", { authData, error });
 
-      toast.success("Login successful!", {
-        description: `Welcome back!`,
-      });
+      toast.success("Welcome back!");
     } catch {
       toast.error("Internal server error. Please try again later.");
     }
