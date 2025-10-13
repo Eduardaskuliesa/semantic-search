@@ -73,7 +73,7 @@ const DashboardClientPage = () => {
     }
   };
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 max-h-[90vh] md:mt-14">
+    <div className="flex flex-1 flex-col gap-4 p-1  max-h-[90vh] md:mt-14">
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
@@ -104,7 +104,7 @@ const DashboardClientPage = () => {
                 );
               case "jobs":
                 return (
-                  <div className="bg-secondary w-full min-h-[85vh] max-h-[85vh] rounded-md border border-border flex items-center justify-center">
+                  <div className="bg-secondary w-full h-[85vh] rounded-md border border-border flex items-center justify-center">
                     <p className="text-muted-foreground">Jobs content</p>
                   </div>
                 );

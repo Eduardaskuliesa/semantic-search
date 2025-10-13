@@ -69,7 +69,7 @@ export const FileUploader = ({
   };
 
   return (
-    <div className="bg-secondary w-full min-h-[85vh] max-h-[85vh] rounded-md border border-border flex flex-col">
+    <div className="bg-secondary w-full h-[85vh] rounded-md border border-border flex flex-col">
       <div className="mx-4 mt-4 mb-4">
         <input
           ref={fileInputRef}

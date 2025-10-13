@@ -21,7 +21,7 @@ export const SwipeableTabContent = ({
   tabs,
 }: SwipeableTabContentProps) => (
   <div
-    className="relative overflow-hidden"
+    className="relative"
     onTouchStart={onTouchStart}
     onTouchEnd={onTouchEnd}
   >
@@ -36,7 +36,7 @@ export const SwipeableTabContent = ({
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              transition={{ type: "tween", stiffness: 300, damping: 30 }}
             >
               {children(tab)}
             </motion.div>
