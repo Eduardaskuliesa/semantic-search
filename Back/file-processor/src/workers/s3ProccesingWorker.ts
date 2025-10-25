@@ -3,7 +3,7 @@ import IORedis from "ioredis";
 import config from "../config";
 import logger from "../utils/logger";
 import { S3JobData } from "@shared/types";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import s3Client from "../services/s3Client";
 import { Readable } from "stream";
 import { parse } from "csv-parse";
@@ -158,6 +158,12 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
   worker.on("ready", () => {});
 
   worker.on("completed", async (job: Job<S3JobData>) => {
+    const command = new DeleteObjectCommand({
+      Bucket: config.r2.bucketName,
+      Key: job.data.key,
+    });
+
+    await s3Client.send(command);
     logger.success(
       `Successfully processed job ${job.id} for file ${job.data.key}`
     );
