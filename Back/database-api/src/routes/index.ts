@@ -1,8 +1,10 @@
-import { Express } from "express";
-import { testRoutes } from "./testRoute";
+import { Router } from "express";
+import queuesRoute from "./queuesRoute";
 
-const routes = (server: Express) => {
-  testRoutes(server);
+const routes = () => {
+  const router = Router();
+  router.use(queuesRoute);
+  return router;
 };
 
 export default routes;

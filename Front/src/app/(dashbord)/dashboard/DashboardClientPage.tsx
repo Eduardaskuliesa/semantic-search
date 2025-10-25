@@ -56,6 +56,17 @@ const DashboardClientPage = () => {
         if (!uploadResponse.ok) {
           throw new Error("Upload failed");
         }
+        console.log(process.env.SEMANTIC_SEARCH_API_KEY);
+        const response = await fetch("http://localhost:4040/api/queue/s3", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.SEMANTIC_SEARCH_API_KEY || " ",
+          },
+          body: JSON.stringify({ key, userId: "example-user-id" }),
+        });
+
+        console.log(response);
 
         updateFileStatus(file.name, { status: "processing", progress: 33 });
         await new Promise((resolve) => setTimeout(resolve, 1500));

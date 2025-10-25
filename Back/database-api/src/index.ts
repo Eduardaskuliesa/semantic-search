@@ -4,8 +4,17 @@ import logger from "./utils/logger";
 import { prisma } from "@shared/database";
 import routes from "./routes";
 import morgan from "morgan";
+import cors from "cors";
 
 const server = express();
+
+server.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 server.use(express.json());
 server.use(morgan("combined"));
@@ -18,8 +27,10 @@ server.get("/health", async (req, res) => {
   }
 });
 
-routes(server);
+server.use("/api", routes());
+
 server.listen(config.server.port, () => {
+
   logger.info(
     `Server is running: http://${config.server.domain}:${config.server.port}`
   );

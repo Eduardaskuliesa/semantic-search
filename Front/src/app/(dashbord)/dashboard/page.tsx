@@ -3,11 +3,9 @@ import DashboardClientPage from "./DashboardClientPage";
 import { validateSession } from "@/helpers/validateSession";
 
 const page = async () => {
-   await validateSession()
+  await validateSession();
 
-  return (
-    <DashboardClientPage></DashboardClientPage>
-  );
+  return <DashboardClientPage></DashboardClientPage>;
 };
 
 export default page;

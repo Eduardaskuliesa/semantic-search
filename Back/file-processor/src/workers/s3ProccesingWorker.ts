@@ -2,7 +2,7 @@ import { Worker, ConnectionOptions, Job } from "bullmq";
 import IORedis from "ioredis";
 import config from "../config";
 import logger from "../utils/logger";
-import { S3JobData } from "../queues/s3FileProccesingQueue";
+import { S3JobData } from "@shared/types";
 
 const redisOptions: ConnectionOptions = {
   maxRetriesPerRequest: null,
@@ -37,7 +37,11 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
   const worker = new Worker(
     `${config.queue.s3Queue}`,
-    async (job: Job<S3JobData>) => {},
+    async (job: Job<S3JobData>) => {
+      logger.info(
+        `Worker s3 ${i} - Processing job ${job.id} for file ${job.data.key}`
+      );
+    },
     {
       connection,
       concurrency: 3,
@@ -49,7 +53,11 @@ for (let i = 1; i <= WORKER_COUNT; i++) {
 
   worker.on("ready", () => {});
 
-  worker.on("completed", async (job: Job<S3JobData>) => {});
+  worker.on("completed", async (job: Job<S3JobData>) => {
+    logger.success(
+      `Successfully processed job ${job.id} for file ${job.data.key}`
+    );
+  });
 
   worker.on("failed", async (job, error) => {
     logger.error(`Worker cloud ${i} - Job ${job?.id} failed:`, error);
