@@ -44,18 +44,20 @@ const DashboardClientPage = () => {
         updateFileStatus(file.name, { status: "uploading", progress: 0 });
 
         const result = await generateUploadUrl(file.name);
-        const { uploadUrl } = result;
+        const { uploadUrl, key } = result;
 
         const uploadResponse = await fetch(uploadUrl, {
           method: "PUT",
           body: file,
         });
 
+        console.log("Upload key:", key);
+
         if (!uploadResponse.ok) {
           throw new Error("Upload failed");
         }
 
-        updateFileStatus(file.name, { status: "processing", progress: 50 });
+        updateFileStatus(file.name, { status: "processing", progress: 33 });
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         updateFileStatus(file.name, { status: "completed", progress: 100 });

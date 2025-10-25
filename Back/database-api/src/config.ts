@@ -2,10 +2,15 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const requiredEnvVars = {
+  REDIS_PORT: process.env.REDIS_PORT,
+  REDIS_HOST: process.env.REDIS_HOST,
   SERVER_PORT: process.env.SERVER_PORT,
   SERVER_DOMAIN: process.env.SERVER_DOMAIN,
   SEMANTIC_SEARCH_API_KEY: process.env.SEMANTIC_SEARCH_API_KEY,
   NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
+  LOCAL_QUEUE_NAME: process.env.LOCAL_QUEUE_NAME,
+  S3_QUEUE_NAME: process.env.S3_QUEUE_NAME,
+  CLOUD_QUEUE_NAME: process.env.CLOUD_QUEUE_NAME,
 };
 
 const missingEnvVars = Object.entries(requiredEnvVars)
@@ -30,7 +35,16 @@ const config = {
   frontEnd: {
     url: process.env.NEXT_PUBLIC_URL!,
     apiKey: process.env.SEMANTIC_SEARCH_API_KEY!,
-  }
+  },
+  queue: {
+    localQueue: process.env.LOCAL_QUEUE_NAME!,
+    s3Queue: process.env.S3_QUEUE_NAME!,
+    cloudQueue: process.env.CLOUD_QUEUE_NAME!,
+  },
+  redis: {
+    port: process.env.REDIS_PORT!,
+    domain: process.env.REDIS_HOST!,
+  },
 } as const;
 
 export default config;

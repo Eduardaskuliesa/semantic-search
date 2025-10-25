@@ -17,9 +17,12 @@
   "dependencies": {
     "@prisma/client": "^6.17.0",
     "@shared/database": "file:../shared/database",
+    "@shared/types": "file:../shared/types",
     "@types/morgan": "^1.9.10",
     "aws4fetch": "^1.0.20",
+    "bullmq": "^5.61.2",
     "dotenv": "^17.2.3",
+    "ioredis": "^5.8.2",
     "morgan": "^1.10.1"
   }
 }
