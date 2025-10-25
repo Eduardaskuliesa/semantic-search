@@ -6,12 +6,7 @@ import { useSwipeableTabs } from "@/hooks/useSwipeableTabs";
 import { SwipeableTabContent } from "./components/SwipeableTabContent";
 import { generateUploadUrl } from "@/actions/generateUploadUrl";
 import { toast } from "sonner";
-
-type FileStatus = {
-  status: "pending" | "uploading" | "processing" | "completed" | "error";
-  progress: number;
-  error?: string;
-};
+import { FileStatus } from "./components/FileUploaderBody";
 
 const DashboardClientPage = () => {
   const [files, setFiles] = useState<File[]>([]);

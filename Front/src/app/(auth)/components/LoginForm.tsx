@@ -22,15 +22,16 @@ const LoginForm = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     setError,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
   const [showPassword, setShowPassword] = useState(false);
-
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const onSubmit = async (data: LoginFormData) => {
     try {
+      setIsLoggingIn(true);
       const { error } = await authClient.signIn.email({
         email: data.email,
         password: data.password,
@@ -43,11 +44,13 @@ const LoginForm = () => {
           message: "Invalid email or password",
         });
         toast.error("Invalid credentials");
+        setIsLoggingIn(false);
         return;
       }
 
       toast.success("Welcome back!");
     } catch {
+      setIsLoggingIn(false);
       toast.error("Internal server error. Please try again later.");
     }
   };
@@ -113,15 +116,15 @@ const LoginForm = () => {
       <MotionButton
         type="submit"
         className="w-full bg-neutral-200 cursor-pointer hover:bg-neutral-300 text-neutral-900 font-medium h-10 transition-colors mt-4 mb-4"
-        disabled={isSubmitting}
+        disabled={isLoggingIn}
         whileTap={{ scale: 0.98, translateY: 2 }}
       >
-        {isSubmitting ? (
+        {isLoggingIn ? (
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
         ) : (
           <LogIn className="w-4 h-4 mr-2 " />
         )}
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isLoggingIn ? "Signing in..." : "Sign in"}
       </MotionButton>
     </form>
   );

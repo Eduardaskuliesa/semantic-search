@@ -10,6 +10,13 @@ import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import { MotionButton } from "@/components/ui/motion-button";
 import { toast } from "sonner";
 import authClient from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+
+const getButtonText = (isSubmiting: boolean, redirecting: boolean) => {
+  if (redirecting) return "Redirecting...";
+  if (isSubmiting) return "Creating account...";
+  return "Create account";
+};
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -35,7 +42,8 @@ const RegisterForm = () => {
     resolver: zodResolver(registerSchema),
   });
   const [showPassword, setShowPassword] = useState(false);
-
+  const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
   const onSubmit = async (data: RegisterFormData) => {
     try {
       const { error } = await authClient.signUp.email({
@@ -58,8 +66,11 @@ const RegisterForm = () => {
         description: "Your account has been created successfully.",
       });
 
+      setRedirecting(true);
+      await new Promise((res) => setTimeout(res, 200));
+      router.push("/login");
       reset();
-    } catch (error){
+    } catch (error) {
       console.log("Registration error:", error);
       toast.error("Internal server error. Please try again later.");
     }
@@ -145,7 +156,7 @@ const RegisterForm = () => {
       <MotionButton
         type="submit"
         className="w-full bg-neutral-200 cursor-pointer hover:bg-neutral-300 text-neutral-900 font-medium h-10 transition-colors mt-4 mb-4"
-        disabled={isSubmitting}
+        disabled={isSubmitting || redirecting}
         whileTap={{ scale: 0.98, translateY: 2 }}
       >
         {isSubmitting ? (
@@ -153,7 +164,8 @@ const RegisterForm = () => {
         ) : (
           <UserPlus className="w-4 h-4 mr-2" />
         )}
-        {isSubmitting ? "Creating account..." : "Create account"}
+
+        {getButtonText(isSubmitting, redirecting)}
       </MotionButton>
     </form>
   );
