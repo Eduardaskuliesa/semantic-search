@@ -12,7 +12,7 @@ server.use(
   cors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key"],
   })
 );
 
@@ -30,7 +30,6 @@ server.get("/health", async (req, res) => {
 server.use("/api", routes());
 
 server.listen(config.server.port, () => {
-
   logger.info(
     `Server is running: http://${config.server.domain}:${config.server.port}`
   );

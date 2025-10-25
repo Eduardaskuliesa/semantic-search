@@ -16,6 +16,9 @@ const getStatusIcon = (status?: FileStatus) => {
   if (status.status === "uploading" || status.status === "processing") {
     return <Loader className="h-4 w-4 animate-spin text-blue-500" />;
   }
+  if (status.status === "error") {
+    return <X className="h-3 w-3 text-red-500" />;
+  }
   return null;
 };
 
@@ -93,10 +96,14 @@ const FileUploaderBody = ({
                       {getStatusText(status)}
                       <div className="">{getStatusIcon(status)}</div>
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {status.progress}%
-                    </span>
+
+                    {status.status === "error" ? null : (
+                      <span className="text-xs text-muted-foreground">
+                        {status.progress}%
+                      </span>
+                    )}
                   </div>
+
                   <div className="h-1 bg-secondary rounded-full overflow-hidden">
                     <motion.div
                       key={`${file.name}`}

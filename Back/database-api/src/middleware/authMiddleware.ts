@@ -10,12 +10,14 @@ export const validateSession = async (
   const apiKey = req.headers["x-api-key"];
 
   if (apiKey !== config.frontEnd.apiKey) {
+    logger.warn("Invalid API Key:", apiKey);
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   const sessionToken = req.headers["better-auth-session-token"];
 
   if (!sessionToken) {
+    logger.warn("Missing session token");
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -32,6 +34,7 @@ export const validateSession = async (
       }
     );
     if (!response.ok) {
+      logger.warn("Session verification failed with status:", response.status);
       return res.status(401).json({ error: "Invalid session" });
     }
     const { sessionIsValid } = await response.json();

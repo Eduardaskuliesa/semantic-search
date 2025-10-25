@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 
 async function createS3Queue(req: Request, res: Response) {
   try {
-    console.log("Received request to add job to S3 queue:", req.body);
     const { key, userId } = req.body;
 
     if (!key || !userId) {

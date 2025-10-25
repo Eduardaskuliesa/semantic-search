@@ -7,6 +7,7 @@ import { SwipeableTabContent } from "./components/SwipeableTabContent";
 import { generateUploadUrl } from "@/actions/generateUploadUrl";
 import { toast } from "sonner";
 import { FileStatus } from "./components/FileUploaderBody";
+import { createQueue } from "@/actions/queues/createQueue";
 
 const DashboardClientPage = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -36,48 +37,55 @@ const DashboardClientPage = () => {
   };
 
   const handleUpload = async () => {
-    try {
-      for (const file of files) {
-        const status = fileStatuses.get(file.name);
-        if (status?.status === "completed") continue;
+    let successCount = 0;
 
-        updateFileStatus(file.name, { status: "uploading", progress: 0 });
-
-        const result = await generateUploadUrl(file.name);
-        const { uploadUrl, key } = result;
-
-        const uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
-          body: file,
-        });
-
-        console.log("Upload key:", key);
-
-        if (!uploadResponse.ok) {
-          throw new Error("Upload failed");
-        }
-        console.log(process.env.SEMANTIC_SEARCH_API_KEY);
-        const response = await fetch("http://localhost:4040/api/queue/s3", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.SEMANTIC_SEARCH_API_KEY || " ",
-          },
-          body: JSON.stringify({ key, userId: "example-user-id" }),
-        });
-
-        console.log(response);
-
-        updateFileStatus(file.name, { status: "processing", progress: 33 });
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        updateFileStatus(file.name, { status: "completed", progress: 100 });
+    for (const file of files) {
+      const status = fileStatuses.get(file.name);
+      if (status?.status === "completed") {
+        successCount++;
+        continue;
       }
 
-      toast.success("All files uploaded successfully");
-    } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error("Upload failed");
+      updateFileStatus(file.name, { status: "uploading", progress: 0 });
+
+      const urlResult = await generateUploadUrl(file.name);
+      if (!urlResult?.uploadUrl || !urlResult?.key) {
+        updateFileStatus(file.name, { status: "error", progress: 100 });
+        toast.error(`Failed to generate upload URL for ${file.name}`);
+        continue;
+      }
+      updateFileStatus(file.name, { status: "processing", progress: 33 });
+      const { uploadUrl, key } = urlResult;
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        updateFileStatus(file.name, { status: "error", progress: 100 });
+        toast.error(`Failed to upload ${file.name}`);
+        continue;
+      }
+
+      updateFileStatus(file.name, { status: "processing", progress: 66 });
+
+      const queueResult = await createQueue("s3", key);
+      if (!queueResult.success) {
+        updateFileStatus(file.name, { status: "error", progress: 100 });
+        toast.error(`Failed to queue ${file.name}`);
+        continue;
+      }
+
+      updateFileStatus(file.name, { status: "completed", progress: 100 });
+      successCount++;
+    }
+
+    if (successCount === files.length) {
+      toast.success(`All files uploaded successfully`);
+    }
+    if (successCount !== files.length) {
+      toast.error(`${files.length - successCount} files failed to upload`);
     }
   };
   return (
