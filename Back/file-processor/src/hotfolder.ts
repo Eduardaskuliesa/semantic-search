@@ -117,7 +117,7 @@ function createTestFiles(fileCount: number) {
     );
     let csvContent = "productId,productName,description\n";
 
-    for (let row = 1; row <= 20; row++) {
+    for (let row = 1; row <= 2000; row++) {
       const productId = randomUUID();
       const product = products[Math.floor(Math.random() * products.length)];
       const desc =
@@ -139,7 +139,7 @@ function createTestFiles(fileCount: number) {
   }
 }
 
-createTestFiles(10);
+// createTestFiles(5);
 
 function enusreDirectoryExists() {
   if (!fs.existsSync(HOTOFOLDER_PATH)) {

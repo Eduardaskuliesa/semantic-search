@@ -5,10 +5,11 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.917.0",
     "@google/genai": "^1.22.0",
     "@prisma/client": "^6.17.0",
-    "@shared/types": "file:../shared/types",
     "@shared/database": "file:../shared/database",
+    "@shared/types": "file:../shared/types",
     "bullmq": "^5.61.0",
     "chokidar": "^4.0.3",
     "csv-parse": "^6.1.0",

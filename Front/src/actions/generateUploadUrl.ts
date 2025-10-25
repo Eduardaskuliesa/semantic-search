@@ -5,10 +5,11 @@ import { AwsClient } from "aws4fetch";
 
 export async function generateUploadUrl(fileName: string) {
   try {
+    const timestamp = Date.now();
     const session = await validateSession();
     const { env } = getCloudflareContext();
 
-    const key = `${session.user.id}/${fileName}`;
+    const key = `${session.user.id}/${timestamp}-${fileName}`;
 
     const aws = new AwsClient({
       accessKeyId: env.R2_ACCESS_KEY_ID,

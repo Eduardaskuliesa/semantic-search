@@ -1,16 +1,25 @@
 import React from "react";
 import { Upload } from "lucide-react";
+import { toast } from "sonner";
 
 interface UploaderProps {
   onFilesSelected: (files: File[]) => void;
   disabled?: boolean;
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
 const Uploader = ({ onFilesSelected, disabled }: UploaderProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const fileArray = Array.from(e.target.files);
-      const csvFiles = fileArray.filter((file) => file.name.endsWith(".csv"));
+      const removedBigSizedFiles = fileArray.filter(
+        (file) => file.size <= MAX_FILE_SIZE
+      );
+      if (removedBigSizedFiles.length !== fileArray.length) {
+        toast.error("Some files were larger than 50MB and have been skipped");
+      }
+      const csvFiles = removedBigSizedFiles.filter((file) => file.name.endsWith(".csv"));
       onFilesSelected(csvFiles);
     }
     e.target.value = "";
